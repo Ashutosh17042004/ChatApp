@@ -2,7 +2,7 @@ import Message from "../models/message.js";
 import User from "../models/User.js";
 
 // get all user expect the logged in user
-export const getUserForSidevbar = async (req, res) => {
+export const getUserForSidebar = async (req, res) => {
   try {
     const userId = req.user_Id;
     const filteredUser = await User.find({ _id: { $ne: userId } }).select(
