@@ -11,7 +11,7 @@ export const getUserForSidevbar = async (req, res) => {
 
     // count no. of mesg not seen
     const unseenMessages = {};
-    const promise = filteredUser.map(async (user) => {
+    const promises = filteredUser.map(async (user) => {
       const messages = await Message.find({
         sendenId: user._id,
         recieverId: userId,
@@ -21,7 +21,7 @@ export const getUserForSidevbar = async (req, res) => {
         unseenMessages[user._id] = messages.length;
       }
     });
-    await promise.all(promises);
+    await Promise.all(promises);
     res.json({ success: true, users: filteredUser, unseenMessages });
   } catch (error) {
     console.log(error.message);
@@ -30,3 +30,30 @@ export const getUserForSidevbar = async (req, res) => {
 };
 
 // get all messages for selected user
+export const getMessages = async (req, res) => {
+  try {
+    const { id: selectedUserId } = req.params;
+    const myId = req.user._id;
+
+    const messages = await Message.find({
+      $or: [
+        {
+          senderId: myId,
+          receiverId: selectedUserId,
+        },
+        {
+          senderId: selectedUserId,
+          receiverId: myId,
+        },
+      ],
+    });
+    await Message.updateMany(
+      { senderId: selectedUserId, receiverId: myId },
+      { seen: true }
+    );
+    res.json({success:true,messages})
+  } catch (error) {
+    console.log(error.message);
+    res.json({ success: false, message: error.message });
+  }
+};
