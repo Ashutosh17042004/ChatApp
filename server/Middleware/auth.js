@@ -13,7 +13,7 @@ export const protectRoute = async (req, res, next) => {
     if (!user) {
       return res.json({ success: false, message: "user not found" });
     }
-    req.user = user; //attacting user object to req for further routes(controller function) to access it from "req"
+    req.user = user; //attachting user object to req for further routes(controller function) to access it from "req"
     next();
   } catch (error) {
     console.log(error.message);
