@@ -40,7 +40,7 @@ export const ChatProvider = ({ children }) => {
   // func to send message to selected user
   const sendMessage = async (messageData) => {
     try {
-      const { data } = await axios.get(
+      const { data } = await axios.post(
         `/api/messages/send/${selectedUser._id}`,
         messageData
       );
@@ -76,11 +76,15 @@ export const ChatProvider = ({ children }) => {
 
   //func to unsubscribeToMessages  from messages
   const unsubscribeFromMessages = () => {
-    if (socket) socket.off("newMessage");
+    if (socket) {
+      socket.off("newMessage");
+    }
   };
   useEffect(() => {
     subscribeToMessages();
-    return () => unsubscribeFromMessages;
+    return () => {
+      unsubscribeFromMessages();
+    };
   }, [socket, selectedUser]);
 
   const value = {
@@ -88,7 +92,8 @@ export const ChatProvider = ({ children }) => {
     users,
     selectedUser,
     getUsers,
-    setMessages,
+
+    getMessages,
     sendMessage,
     setSelectedUser,
     unseenMessages,
