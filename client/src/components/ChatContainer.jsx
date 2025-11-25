@@ -38,7 +38,7 @@ const ChatContainer = () => {
   };
 
   useEffect(() => {
-    if (selectedUser) {
+    if (selectedUser) {      
       getMessages(selectedUser._id);
     }
   }, [selectedUser]);
@@ -60,8 +60,9 @@ const ChatContainer = () => {
         />
         <p className=" flex flex-1 text-lg text-white  items-center gap-2">
           {selectedUser.fullName}
-          {onlineUser.includes(selectedUser._id)}
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+          {onlineUser.includes(selectedUser._id) && (
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+          )}
         </p>
         <img
           onClick={() => {

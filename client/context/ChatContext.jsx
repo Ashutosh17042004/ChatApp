@@ -29,6 +29,8 @@ export const ChatProvider = ({ children }) => {
   const getMessages = async (userId) => {
     try {
       const { data } = await axios.get(`/api/messages/${userId}`);
+      console.log(`${data} ChatContext line 32`);
+
       if (data.success) {
         setMessages(data.messages);
       }
@@ -86,6 +88,8 @@ export const ChatProvider = ({ children }) => {
       unsubscribeFromMessages();
     };
   }, [socket, selectedUser]);
+
+;
 
   const value = {
     messages,
