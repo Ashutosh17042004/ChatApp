@@ -34,21 +34,28 @@ export const getUserForSidebar = async (req, res) => {
 // get all messages for selected user
 export const getMessages = async (req, res) => {
   try {
-    const { id: selectedUserId } = req.params;
-    const myId = req.user._id;
+    const selectedUserId = req.params.id;
+    const myId = req.user._id.toString();
+
+    // Convert selected USER ID
+    // const selectedUserId = mongoose.Types.ObjectId(selectedUserIdStr);
+
+    console.log({ myId, selectedUserId });
 
     const messages = await Message.find({
       $or: [
         {
           senderId: myId,
-          receiverId: selectedUserId,
+          recieverId: selectedUserId,
         },
         {
           senderId: selectedUserId,
-          receiverId: myId,
+          recieverId: myId,
         },
       ],
-    });
+    }).sort({ createdAt: 1 }); //oldest first
+    // console.log(messages, "line52 msgconn");
+
     await Message.updateMany(
       { senderId: selectedUserId, receiverId: myId },
       { seen: true }
@@ -56,6 +63,7 @@ export const getMessages = async (req, res) => {
     res.json({ success: true, messages });
   } catch (error) {
     console.log(error.message);
+
     res.json({ success: false, message: error.message });
   }
 };
@@ -75,14 +83,6 @@ export const markMessageAsSeen = async (req, res) => {
 // send message to selected user
 export const sendMessage = async (req, res) => {
   try {
-    // console.log(
-    //   "params:",
-    //   req.params,
-    //   "body:",
-    //   req.body,
-    //   "user:",
-    //   req.user._id
-    // );
     const { text, image } = req.body;
     const recieverId = req.params.id;
     const senderId = req.user._id;
@@ -92,7 +92,7 @@ export const sendMessage = async (req, res) => {
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
     }
-    const newMessage =await Message.create({
+    const newMessage = await Message.create({
       senderId,
       recieverId,
       text,
