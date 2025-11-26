@@ -6,7 +6,7 @@ import { io, userSocketMap } from "../server.js";
 // get all user expect the logged in user
 export const getUserForSidebar = async (req, res) => {
   try {
-    const userId = req.user_Id;
+    const userId = req.user._id.toString();
     const filteredUser = await User.find({ _id: { $ne: userId } }).select(
       "-password"
     ); //here $ne=(not equal to)
@@ -15,10 +15,11 @@ export const getUserForSidebar = async (req, res) => {
     const unseenMessages = {};
     const promises = filteredUser.map(async (user) => {
       const messages = await Message.find({
-        sendenId: user._id,
+        senderId: user._id,
         recieverId: userId,
         seen: false,
       });
+
       if (messages.length > 0) {
         unseenMessages[user._id] = messages.length;
       }
@@ -37,11 +38,6 @@ export const getMessages = async (req, res) => {
     const selectedUserId = req.params.id;
     const myId = req.user._id.toString();
 
-    // Convert selected USER ID
-    // const selectedUserId = mongoose.Types.ObjectId(selectedUserIdStr);
-
-    console.log({ myId, selectedUserId });
-
     const messages = await Message.find({
       $or: [
         {
@@ -57,7 +53,7 @@ export const getMessages = async (req, res) => {
     // console.log(messages, "line52 msgconn");
 
     await Message.updateMany(
-      { senderId: selectedUserId, receiverId: myId },
+      { senderId: selectedUserId, recieverId: myId },
       { seen: true }
     );
     res.json({ success: true, messages });
