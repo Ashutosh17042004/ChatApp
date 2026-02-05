@@ -17,74 +17,59 @@ export const ChatProvider = ({ children }) => {
       const { data } = await axios.get("/api/messages/users");
       if (data.success) {
         setUsers(data.users);
-        setUnseenMessages(data.unseenMessages);
+        setUnseenMessages(data.unseenMessages || {});
       }
     } catch (error) {
-      toast.error(error.message);
+      console.error("Error fetching users:", error);
     }
   }, [axios]);
 
-  // FIXED: Added useCallback so this function reference stays stable
   const getMessages = useCallback(async (userId) => {
+    if (!userId) return;
     try {
       const { data } = await axios.get(`/api/messages/${userId}`);
-      console.log(`ChatContext line 32: Messages fetched for ${userId}`);
-      if (data.success) {
-        setMessages(data.messages);
-      }
+      if (data.success) setMessages(data.messages);
     } catch (error) {
-      toast.error(error.message);
+      toast.error("Failed to load messages");
     }
   }, [axios]);
 
-  const sendMessage = async (messageData) => {
+  const sendMessage = useCallback(async (messageData) => {
+    if (!selectedUser?._id) return;
     try {
-      const { data } = await axios.post(
-        `/api/messages/send/${selectedUser._id}`,
-        messageData
-      );
+      const { data } = await axios.post(`/api/messages/send/${selectedUser._id}`, messageData);
       if (data.success) {
-        setMessages((prevMessages) => [...prevMessages, data.newMessage]);
-      } else {
-        toast.error(data.message);
+        setMessages((prev) => [...prev, data.newMessage]);
       }
     } catch (error) {
-      toast.error(error.message);
+      toast.error("Message failed to send");
+      throw error; 
     }
-  };
+  }, [axios, selectedUser?._id]);
 
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = async (newMessage) => {
-      // Use functional state updates to avoid needing selectedUser in dependency array
-      if (selectedUser && newMessage.senderId.toString() === selectedUser._id.toString()) {
-        newMessage.seen = true;
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-        await axios.put(`/api/messages/mark/${newMessage._id}`);
-      } else {
-        setUnseenMessages((prev) => ({
-          ...prev,
-          [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1,
-        }));
-      }
+      // Use state callback to ensure we always have the current selectedUser ID
+      setSelectedUser((currentSelected) => {
+        if (currentSelected && newMessage.senderId === currentSelected._id) {
+          setMessages((prev) => [...prev, newMessage]);
+          axios.put(`/api/messages/mark/${newMessage._id}`).catch(() => {});
+        } else {
+          setUnseenMessages((prev) => ({
+            ...prev,
+            [newMessage.senderId]: (prev[newMessage.senderId] || 0) + 1,
+          }));
+        }
+        return currentSelected;
+      });
     };
 
     socket.on("newMessage", handleNewMessage);
     return () => socket.off("newMessage", handleNewMessage);
-  }, [socket, selectedUser, axios]);
+  }, [socket, axios]);
 
-  const value = {
-    messages,
-    users,
-    selectedUser,
-    getUsers,
-    getMessages,
-    sendMessage,
-    setSelectedUser,
-    unseenMessages,
-    setUnseenMessages,
-  };
-
+  const value = { messages, users, selectedUser, getUsers, getMessages, sendMessage, setSelectedUser, unseenMessages, setUnseenMessages };
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
