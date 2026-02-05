@@ -3,6 +3,8 @@
 
 * {
   font-family: "Outfit", sans-serif;
+  scroll-behavior: smooth;
+  
 }
 
 ::-webkit-scrollbar {
