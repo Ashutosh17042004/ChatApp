@@ -204,12 +204,27 @@ const ChatContainer = () => {
     try { await sendMessage({ text }); } catch (err) { setInput(text); }
   };
 
+  // 1. Restored image handling function
+  const handleSendImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("select an image file");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      await sendMessage({ image: reader.result });
+      e.target.value = "";
+    };
+    reader.readAsDataURL(file);
+  };
+
   return selectedUser ? (
     <div className="flex flex-col h-full bg-[#100e17] overflow-hidden">
       <header className="h-[70px] flex items-center justify-between px-4 border-b border-gray-800 bg-[#1a1625] shrink-0">
         <div className="flex items-center gap-3">
-          <img src={assets.arrow_icon} className="md:hidden w-6 invert cursor-pointer" onClick={() => setSelectedUser(null)} />
-          <img src={selectedUser.profilePic || assets.avatar_icon} className="w-10 h-10 rounded-full object-cover" alt="" />
+          <img src={assets.arrow_icon} className="md:hidden w-6 invert cursor-pointer" onClick={() => setSelectedUser(null)} alt="back" />
+          <img src={selectedUser.profilePic || assets.avatar_icon} className="w-10 h-10 rounded-full object-cover" alt="profile" />
           <div>
             <p className="text-white text-sm font-medium">{selectedUser.fullName}</p>
             <span className={`text-[10px] ${onlineUser.includes(selectedUser._id) ? "text-green-500" : "text-gray-500"}`}>
@@ -225,7 +240,7 @@ const ChatContainer = () => {
           return (
             <div key={idx} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[75%] p-3 rounded-2xl text-sm ${isMe ? "bg-violet-600 text-white rounded-br-none" : "bg-[#2d283e] text-white rounded-bl-none border border-gray-700"}`}>
-                {msg.image ? <img src={msg.image} className="rounded-lg max-h-60" alt="" /> : <p>{msg.text}</p>}
+                {msg.image ? <img src={msg.image} className="rounded-lg max-h-60" alt="attachment" /> : <p>{msg.text}</p>}
                 <p className="text-[9px] opacity-50 mt-1 text-right">{formatTime(msg.createdAt)}</p>
               </div>
             </div>
@@ -237,13 +252,33 @@ const ChatContainer = () => {
       <footer className="p-4 bg-[#1a1625] border-t border-gray-800 shrink-0">
         <form onSubmit={handleSend} className="flex items-center gap-2 bg-[#282142] px-3 py-2 rounded-full border border-gray-700">
           <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type a message..." className="flex-1 bg-transparent outline-none text-white text-sm" />
-          <button type="submit" disabled={!input.trim()} className="disabled:opacity-30"><img src={assets.send_button} className="w-8 h-8" /></button>
+          
+          {/* 2. Restored hidden file input and gallery icon label */}
+          <input
+            onChange={handleSendImage}
+            type="file"
+            id="image"
+            accept="image/png, image/jpeg"
+            hidden
+          />
+          <label htmlFor="image" className="cursor-pointer flex items-center shrink-0">
+            <img 
+              src={assets.gallery_icon} 
+              alt="gallery" 
+              className="w-5 mx-2 opacity-70 hover:opacity-100 transition-opacity" 
+            />
+          </label>
+
+          {/* Note: Removed the disabled state so users can send just an image without needing text in the input */}
+          <button type="submit" className="shrink-0">
+            <img src={assets.send_button} alt="send" className="w-8 h-8" />
+          </button>
         </form>
       </footer>
     </div>
   ) : (
     <div className="hidden md:flex flex-1 flex-col items-center justify-center bg-[#1a1625] text-gray-500 italic">
-      <img src={assets.logo_icon} className="w-16 opacity-10 mb-4 invert" alt="" />
+      <img src={assets.logo_icon} className="w-16 opacity-10 mb-4 invert" alt="logo" />
       <p>Select a friend to start chatting</p>
     </div>
   );
